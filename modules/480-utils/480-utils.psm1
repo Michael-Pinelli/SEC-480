@@ -132,3 +132,13 @@ function GetVM-Info()
     Get-VM -Name $global:selected_vm2 -PipelineVariable vm | where{$_.Guest.Nics.IpAddress} | Get-NetworkAdapter |
     Select @{N='VM';E={$vm.Name}},Name,@{N=”IP Address”;E={$nic = $_; ($vm.Guest.Nics | where{$_.Device.Name -eq $nic.Name}).IPAddress -join '|'}},MacAddress
 }
+
+function StartVM ()
+{
+    Start-VM -VM $global:selected_vm2
+}
+
+function StopVM ()
+{
+    Stop-VM -VM $global:selected_vm2
+}
