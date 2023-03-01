@@ -142,3 +142,13 @@ function StopVM ()
 {
     Stop-VM -VM $global:selected_vm2
 }
+
+function Change-NetworkAdapter ()
+{   
+    Get-NetworkAdapter -VM $global:selected_vm2 | Select Name
+    $net_adapter_q = Read-Host -Prompt "Please select which network adapter you want to change"
+    $net_adapter = Get-NetworkAdapter -VM $global:selected_vm2 -Name $net_adapter_q
+    Get-VirtualSwitch | Select Name
+    $new_net = Read-Host -Prompt "Please select which network you want to change to"
+    Set-NetworkAdapter -NetworkAdapter $net_adapter -NetworkName $new_net
+}

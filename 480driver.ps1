@@ -5,7 +5,7 @@ $conf = Get-480Config -config_path "/home/mike/SYS-480/480.json"
 480Connect -server $conf.vcenter_server
 Write-Host "Listing VMs"
 
-$option = Read-Host -Prompt "[L]inked clone of Base Snapshot | [V]irtual Switch | [P]ort Group | [G]et VM Info | [S]tart a VM | [SS]top a VM"
+$option = Read-Host -Prompt "[L]inked clone of Base Snapshot | [V]irtual Switch | [P]ort Group | [G]et VM Info | [S]tart a VM | [SS]top a VM | [N]etwork Adapter"
 if ($option -eq "l" -or $option -eq "L")
 {
     Select-VM -folder "BASEVM"
@@ -28,4 +28,8 @@ if ($option -eq "l" -or $option -eq "L")
 {
     Select-VM -folder "PROD"
     StopVM
+}elseif ($option -eq "n" -or $option -eq "N")
+{
+    Select-VM -folder "480-Pinelli"
+    Change-NetworkAdapter
 }
