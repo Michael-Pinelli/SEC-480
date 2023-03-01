@@ -97,3 +97,38 @@ function createlinkedclone() {
     $linkedVM | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName "480-WAN"
     Get-VM
 }
+
+function Create-VS([string] $name, [string] $vmhost)
+{
+    Get-VirtualSwitch
+    $name = Read-Host -Prompt "Please enter the new Virtual Switch name"
+    $new_vs = New-VirtualSwitch -VMHost $vmhost -Name $name
+    Write-Host "Created: " $new_vs
+    $option = Read-Host -Prompt "Do you want to create a new port group [Y/N]"
+    if ($option -eq "y" -or $option -eq "Y")
+    {   
+        $name = Read-Host -Prompt "Please enter the new Port Group name"
+        New-VirtualPortGroup -VirtualSwitch $new_vs -Name $name
+    }else {
+        Get-VirtualSwitch
+    }
+    Get-VirtualSwitch
+}
+
+
+function Create-PG([string] $name, [string] $vswitch)
+{
+    Get-VirtualPortGroup
+    $vswitch = Read-Host -Prompt "Please enter the Virtual Switch's name"
+    $name = Read-Host -Prompt "Please enter the new Port Group name"
+    $new_pg = New-VirtualPortGroup -VirtualSwitch $vswitch -Name $name
+    Write-Host "Created: " $new_pg
+
+}
+
+function GetVM-Info()
+{
+    #Shoutout to Lucd on the VMware forums :)
+    Get-VM -Name $global:selected_vm2 -PipelineVariable vm | where{$_.Guest.Nics.IpAddress} | Get-NetworkAdapter |
+    Select @{N='VM';E={$vm.Name}},Name,@{N=”IP Address”;E={$nic = $_; ($vm.Guest.Nics | where{$_.Device.Name -eq $nic.Name}).IPAddress -join '|'}},MacAddress
+}
