@@ -98,9 +98,9 @@ function createlinkedclone() {
     Get-VM
 }
 
-function Create-VS([string] $name, [string] $vmhost)
+function Create-VS([string] $vmhost)
 {
-    Get-VirtualSwitch
+    Get-VirtualSwitch | Select Name
     $name = Read-Host -Prompt "Please enter the new Virtual Switch name"
     $new_vs = New-VirtualSwitch -VMHost $vmhost -Name $name
     Write-Host "Created: " $new_vs
@@ -108,17 +108,18 @@ function Create-VS([string] $name, [string] $vmhost)
     if ($option -eq "y" -or $option -eq "Y")
     {   
         $name = Read-Host -Prompt "Please enter the new Port Group name"
-        New-VirtualPortGroup -VirtualSwitch $new_vs -Name $name
+        $new_pg = New-VirtualPortGroup -VirtualSwitch $new_vs -Name $name
+        Write-Host "Created: " $new_pg
     }else {
-        Get-VirtualSwitch
+        Get-VirtualSwitch  | Select Name
     }
-    Get-VirtualSwitch
+    Get-VirtualSwitch  | Select Name
 }
 
 
-function Create-PG([string] $name, [string] $vswitch)
+function Create-PG()
 {
-    Get-VirtualPortGroup
+    Get-VirtualSwitch | Select Name
     $vswitch = Read-Host -Prompt "Please enter the Virtual Switch's name"
     $name = Read-Host -Prompt "Please enter the new Port Group name"
     $new_pg = New-VirtualPortGroup -VirtualSwitch $vswitch -Name $name
@@ -148,7 +149,6 @@ function Change-NetworkAdapter ()
     Get-NetworkAdapter -VM $global:selected_vm2 | Select Name
     $net_adapter_q = Read-Host -Prompt "Please select which network adapter you want to change"
     $net_adapter = Get-NetworkAdapter -VM $global:selected_vm2 -Name $net_adapter_q
-    #Get-VirtualSwitch | Select Name
     Get-VirtualPortGroup | Select Name
     $new_net = Read-Host -Prompt "Please select which network you want to change to"
     Set-NetworkAdapter -NetworkAdapter $net_adapter -NetworkName $new_net
