@@ -1,6 +1,5 @@
 {
     "vcenter_server" : "vcenter.pinelli.local",
-    "vcenter_username" : "michael.pinelli-adm",
     "vm_folder" : "BASEVM",
     "esxi_host" : "192.168.7.23",
     "default_network" : "480-WAN"

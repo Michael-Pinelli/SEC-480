@@ -16,18 +16,18 @@ function 480Banner()
     Write-Host $banner
 }
 
-function 480Connect ([string] $server, [string] $user)
+function 480Connect ([string] $server)
 {
     $conn = $global:DefaultVIserver
     if ($conn){
         $msg = "Already Connected to: {0}" -f $conn
         Write-Host -ForegroundColor Green $msg
     }else {
-        $conn = Connect-VIServer -Server $server -User $user
+        $conn = Connect-VIServer -Server $server
     }
 }
 
-function Get-480Config([string] $config_path)
+Function Get-480Config([string] $config_path)
 {
     Write-Host "Reading " $config_path
     $conf=$null
@@ -39,9 +39,11 @@ function Get-480Config([string] $config_path)
     }else{
         Write-Host -ForegroundColor Yellow "No Configuration!"
     }
+    return $conf
 }
 
-function Select-VM([string] $folder)
+$global:selected_vm2=$null
+Function Select-VM([string] $folder)
 {
     $selected_vm=$null
     try
@@ -56,11 +58,13 @@ function Select-VM([string] $folder)
         $pick_index = Read-Host "Which index number [x] do you want to choose?"
         try{
             $selected_vm = $vms[$pick_index -1]
-            Write-Host "You chose " $selected_vm.name
+            Write-Host "You chose:" $selected_vm.name
+            $global:selected_vm2 = $selected_vm
             return $selected_vm
         }
         catch {
             Write-Host "Invalid Index: $pick_index" -ForegroundColor Red
+            Select-VM
         }
     }
     catch {
@@ -70,9 +74,7 @@ function Select-VM([string] $folder)
 }
 
 function createbasevm() {
-    Get-VM
-    $cvm = Read-Host -Prompt "Please enter the VM you want to clone (name)"
-    $vm = Get-VM -Name $cvm
+    $vm = $global:selected_vm2
     $vmhost = Get-VMHost -Name "192.168.7.23"
     $ds = Get-DataStore -Name "datastore2 -super13"
     $snapshot = Get-Snapshot -VM $vm -Name "Base"
@@ -86,15 +88,12 @@ function createbasevm() {
 }
     
 function createlinkedclone() {
-    Get-VM
-    $cvm = Read-Host -Prompt "Please enter the VM you want to clone (name)"
-    $vm = Get-VM -Name $cvm
+    $vm = $global:selected_vm2
     $vmhost = Get-VMHost -Name "192.168.7.23"
     $ds = Get-DataStore -Name "datastore2 -super13"
     $snapshot = Get-Snapshot -VM $vm -Name "Base"
     $linkedClone = Read-Host -Prompt "Please enter the new VM's name"
     $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
-    $net_vm = Read-Host -Prompt "Please enter the network you want the new VM to be on"
-    $linkedVM | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName $net_vm
+    $linkedVM | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName "480-WAN"
     Get-VM
 }
