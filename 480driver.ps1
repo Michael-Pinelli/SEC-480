@@ -22,11 +22,11 @@ if ($option -eq "l" -or $option -eq "L")
     GetVM-Info
 }elseif ($option -eq "s" -or $option -eq "S")
 {
-    Select-VM -folder "PROD"
+    Select-VM -folder "480-Pinelli"
     StartVM
 }elseif ($option -eq "ss" -or $option -eq "SS")
 {
-    Select-VM -folder "PROD"
+    Select-VM -folder "480-Pinelli"
     StopVM
 }elseif ($option -eq "n" -or $option -eq "N")
 {
