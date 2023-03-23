@@ -1,3 +1,5 @@
+Import '/home/mike/SYS-480'
+
 function 480Banner()
 {   
     $banner=@'
@@ -93,9 +95,9 @@ function createlinkedclone() {
     $ds = Get-DataStore -Name "datastore2 -super13"
     $snapshot = Get-Snapshot -VM $vm -Name "Base"
     $linkedClone = Read-Host -Prompt "Please enter the new VM's name"
-    $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
-    $linkedVM | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName "480-WAN"
+    New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
     Get-VM
+    return_to_main
 }
 
 function Create-VS([string] $vmhost)
@@ -114,6 +116,7 @@ function Create-VS([string] $vmhost)
         Get-VirtualSwitch  | Select Name
     }
     Get-VirtualSwitch  | Select Name
+    return_to_main
 }
 
 
@@ -124,6 +127,7 @@ function Create-PG()
     $name = Read-Host -Prompt "Please enter the new Port Group name"
     $new_pg = New-VirtualPortGroup -VirtualSwitch $vswitch -Name $name
     Write-Host "Created: " $new_pg
+    return_to_main
 
 }
 
@@ -132,16 +136,19 @@ function GetVM-Info()
     #Shoutout to Lucd on the VMware forums :)
     Get-VM -Name $global:selected_vm2 -PipelineVariable vm | where{$_.Guest.Nics.IpAddress} | Get-NetworkAdapter |
     Select @{N='VM';E={$vm.Name}},Name,@{N=”IP Address”;E={$nic = $_; ($vm.Guest.Nics | where{$_.Device.Name -eq $nic.Name}).IPAddress -join '|'}},MacAddress
+    return_to_main
 }
 
 function StartVM ()
 {
     Start-VM -VM $global:selected_vm2
+    return_to_main
 }
 
 function StopVM ()
 {
     Stop-VM -VM $global:selected_vm2
+    return_to_main
 }
 
 function Change-NetworkAdapter ()
@@ -152,4 +159,5 @@ function Change-NetworkAdapter ()
     Get-VirtualPortGroup | Select Name
     $new_net = Read-Host -Prompt "Please select which network you want to change to"
     Set-NetworkAdapter -NetworkAdapter $net_adapter -NetworkName $new_net
+    return_to_main
 }

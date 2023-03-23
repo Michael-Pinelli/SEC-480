@@ -1,0 +1,55 @@
+#usage: ansible-playbook -i inventories/linux.yaml --ask-pass ubuntu-playbook.yml -K
+- name: ubuntu config
+  hosts: ubuntu
+  become: true
+  tasks:
+  - name: Deploy SSH Key
+    authorized_key: user={{ ansible_user }}
+                    key="{{ public_key }}"
+                    state=present
+  - name: sudo no password
+    copy:
+      content: '%sudo ALL=(ALL:ALL) NOPASSWD:ALL'
+      dest: /etc/sudoers.d/sudo_nopasswd
+      mode: 0440
+  - name: add user to sudo group
+    user:
+      name={{ ansible_user }}
+      groups=sudo
+      append=yes
+      state=present
+      createhome=yes
+  - name: change hostname
+    hostname:
+      name: "{{ hostname }}"
+  - name: Delete netplan file
+    ignore_errors: yes
+    shell: "sudo rm /etc/netplan/00-installer-config.yaml"
+  - name: create drop in netplan
+    copy:
+      dest: "/etc/netplan/00-installer-config.yaml"
+      content: |
+        network:
+          version: 2
+          renderer: networkd
+          ethernets:
+            ens33:
+              addresses:
+                - "{{ lan_ip }}/24"
+              gateway4: "{{ gateway }}"
+              nameservers:
+                addresses: 
+                  - "{{ name_server }}"
+                  - "{{ gateway }}"
+      
+  - name: Apply netplan
+    command: "sudo netplan apply"
+    async: 45
+    poll: 0
+
+  handlers:
+   - name: restart ssh
+     service:
+       name=sshd
+       state=restarted
+  

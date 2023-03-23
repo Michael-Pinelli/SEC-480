@@ -3,8 +3,8 @@ Import-Module '480-utils' -Force
 480Banner
 $conf = Get-480Config -config_path "/home/mike/SYS-480/480.json"
 480Connect -server $conf.vcenter_server
-Write-Host "Listing VMs"
 
+function main_menu () {
 $option = Read-Host -Prompt "[L]inked clone of Base Snapshot | [V]irtual Switch | [P]ort Group | [G]et VM Info | [S]tart a VM | [SS]top a VM | [N]etwork Adapter"
 if ($option -eq "l" -or $option -eq "L")
 {
@@ -32,4 +32,18 @@ if ($option -eq "l" -or $option -eq "L")
 {
     Select-VM -folder "480-Pinelli"
     Change-NetworkAdapter
+}
+}
+
+main_menu
+
+function return_to_main (){
+$option2 = Read-Host -Prompt "Would you like to return to the main menu? [Y/N]"
+if ($option2 -eq "y" -or $option -eq "Y")
+{
+    main_menu
+}else{
+    Write-Host "Goodbye!"
+    Exit
+}
 }
