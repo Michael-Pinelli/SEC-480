@@ -33,7 +33,7 @@
           version: 2
           renderer: networkd
           ethernets:
-            ens33:
+            "{{ device }}:"
               addresses:
                 - "{{ lan_ip }}/24"
               gateway4: "{{ gateway }}"
@@ -41,7 +41,6 @@
                 addresses: 
                   - "{{ name_server }}"
                   - "{{ gateway }}"
-      
   - name: Apply netplan
     command: "sudo netplan apply"
     async: 45
