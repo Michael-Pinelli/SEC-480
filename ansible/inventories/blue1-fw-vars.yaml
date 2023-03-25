@@ -11,6 +11,6 @@ vyos:
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    ansible_connectin: network_cli
+    ansible_connection: network_cli
     ansible_network_os: vyos
     ansible_user: vyos
