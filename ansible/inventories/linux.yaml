@@ -25,6 +25,16 @@ linux:
           lan_ip: 10.0.5.31
       vars:
         device: ens33
+        graylog_ip: 10.0.5.32
+    graylog-server:
+      hosts: 
+        10.0.5.32:
+          hostname: ubuntu-graylog
+          lan_ip: 10.0.5.32
+      vars:
+        graylog_ip: 10.0.5.32
+        graylog_secret: "" # Create with: pwgen -s 96 1
+        graylog_hash: "" #Create with: echo -n "Enter Password: " && head -1 </dev/stdin | tr -d '\n' | sha256sum | cut -d" " -f1
 
   vars:
     public_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCmdydpVkHCdByoFPKXXXs+yMMaOQjXB12Geo1Nlz0dSy138EKPFmlxbOlBH24UxB2+tZypXlPAePGGdzcidTWu6fnZiBQpJ3H+EYXLCuMoqgvphKUDmQCPKKewvjIDEcMI0XC7J6VpLN15UhbmvyHMPpIQu8+j7uBlNjEUhlu1gqSomeAWq1s38SJ7Q3M7khjabBMA5Yc/5AzsJJLtwuHGDdxyJ433vsOE5CzZZ6k0BV6LQq1M19/2UOuRxH5AlibM5R7vDQvg/famgFGCyJDCxYgnros6V6WqzhaMIXTy4RcGo0/DCCqwE9gS++OXnmnxs6D8PoUhoAz/RkrXJXukCfZT/3CVDU6dEGA8snkhLwfrbEVNS1rED6mS4YColt8U1Op7Mf/nHWTHzHWVs/tbh78IiqFaXmvmz65yOfm48JcOoJT+dLG9Bat0o1C9Nn620JQL+FZo61WhkpyU6HgRaRwAx9Nf5//NlUvIV5JuS8gWqWxg9/mAIyDGJ1ionbc= mike@xubuntu-wan"

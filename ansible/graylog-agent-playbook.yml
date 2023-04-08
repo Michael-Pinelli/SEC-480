@@ -1,0 +1,15 @@
+#usage: ansible-playbook -i inventories/linux.yaml --ask-pass graylog-agent-playbook.yml -K
+- name: ubuntu agent
+  hosts: ubuntu
+  become: true
+  tasks:
+  - name: Enable rsyslog
+    command: 'systemctl is-enabled rsyslog'
+
+  - name: Create rsyslog config
+    copy:
+      dest: "/etc/rsyslog.d/60-graylog.conf"
+      content: '*.*@{{ graylog_ip }}:5148;RSYSLOG_SyslogProtocol23Format'
+  
+  - name: Restart rsyslog
+    command: 'systemctl restart rsyslog'

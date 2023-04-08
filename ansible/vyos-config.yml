@@ -2,7 +2,6 @@
 - name: vyos network config
   hosts: vyos
   vars_prompt:
-
   - name: password
     prompt: Enter your vyos password
     private: true

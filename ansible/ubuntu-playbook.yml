@@ -33,10 +33,12 @@
           version: 2
           renderer: networkd
           ethernets:
-            "{{ device }}:"
+            "{{ device }}":
               addresses:
                 - "{{ lan_ip }}/24"
-              gateway4: "{{ gateway }}"
+              routes: 
+                  - to: default
+                    via: "{{ gateway }}"
               nameservers:
                 addresses: 
                   - "{{ name_server }}"

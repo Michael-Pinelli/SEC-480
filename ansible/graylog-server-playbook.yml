@@ -1,0 +1,101 @@
+#usage: ansible-playbook -i inventories/linux.yaml --ask-pass graylog-server-playbook.yml -K
+- hosts: "graylog-server"
+  remote_user: "{{ ansible_user }}"
+  become: True
+  pre_tasks:
+    - name: Add MongoDB GPG key
+      get_url:
+        url: 'https://www.mongodb.org/static/pgp/server-6.0.asc'
+        dest: /tmp/mongodb.asc
+    
+    - name: Add Key
+      command: "sudo apt-key add /tmp/mongodb.asc"
+
+    - name: Add MongoDB repository
+      apt_repository:
+        repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
+        state: present
+    
+    - name: Apt Update
+      command: "sudo apt-get update"
+
+    - name: Install MongoDB
+      apt:
+        name: mongodb-org
+        state: present
+  
+  vars_prompt:
+    - name: graylog_username
+      prompt: "Enter your Graylog username"
+    
+    - name: graylog_password
+      prompt: "Enter your Graylog password"
+    
+  tasks: 
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Install Graylog API library
+      pip:
+        name: graypy
+        state: present
+    
+    - name: Create UDP input for syslog
+      ignore_errors: true
+      uri:
+        url: "http://{{ graylog_ip }}:9000/api/system/inputs"
+        method: POST
+        user: "{{ graylog_username }}"
+        password: "{{ graylog_password }}"
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+          X-Requested-By: Ansible
+        body:
+          title: "SYSLOG UDP"
+          type: "org.graylog2.inputs.syslog.udp.SyslogUDPInput"
+          global: true
+          configuration:
+            allow_override_date: true
+            bind_address: "0.0.0.0"
+            decompress_size_limit: 8388608
+            override_source: null
+            port: 5148
+            recv_buffer_size: 262144
+            store_full_message: true
+        status_code: 201
+      register: input_create_response
+
+  vars:
+    #Elasticsearch vars
+    es_major_version: "7.x"
+    es_version: "7.10.2"
+    es_enable_xpack: False
+    es_instance_name: "graylog"
+    es_heap_size: "1g"
+    es_config:
+      node.name: "graylog"
+      cluster.name: "graylog"
+      http.port: 9200
+      transport.tcp.port: 9300
+      network.host: "127.0.0.1"
+      discovery.seed_hosts: "localhost:9300"
+      cluster.initial_master_nodes: "graylog"
+    oss_version: True
+    es_action_auto_create_index: False
+
+    #Graylog vars
+    graylog_version: 4.2
+    graylog_install_java: True
+    graylog_password_secret: "{{ graylog_secret }}"
+    graylog_root_password_sha2: "{{ graylog_hash }}"
+    graylog_http_bind_address: "{{ graylog_ip }}:9000"
+    graylog_http_publish_uri: "http://{{ graylog_ip }}:9000/"
+    graylog_http_external_uri: "http://{{ graylog_ip }}:9000/"
+
+  roles:
+    - role: "graylog2.graylog"
+      tags:
+        - "graylog"

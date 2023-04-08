@@ -5,34 +5,39 @@ $conf = Get-480Config -config_path "/home/mike/SYS-480/480.json"
 480Connect -server $conf.vcenter_server
 
 function main_menu () {
-$option = Read-Host -Prompt "[L]inked clone of Base Snapshot | [V]irtual Switch | [P]ort Group | [G]et VM Info | [S]tart a VM | [SS]top a VM | [N]etwork Adapter"
-if ($option -eq "l" -or $option -eq "L")
-{
-    Select-VM -folder "BASEVM"
-    createlinkedclone
-}elseif ($option -eq "v" -or $option -eq "V")
-{
-    Create-VS -vmhost $conf.esxi_host
-}elseif ($option -eq "p" -or $option -eq "P")
-{
-    Create-PG
-}elseif ($option -eq "g" -or $option -eq "G")
-{
-    Select-VM -folder "480-Pinelli"
-    GetVM-Info
-}elseif ($option -eq "s" -or $option -eq "S")
-{
-    Select-VM -folder "480-Pinelli"
-    StartVM
-}elseif ($option -eq "ss" -or $option -eq "SS")
-{
-    Select-VM -folder "480-Pinelli"
-    StopVM
-}elseif ($option -eq "n" -or $option -eq "N")
-{
-    Select-VM -folder "480-Pinelli"
-    Change-NetworkAdapter
-}
+    Write-Host "Options"
+    Write-Host "[1] Create a Linked Clone"
+    Write-Host "[2] Create a Virtual Switch" 
+    Write-Host "[3] Create a Port Group"
+    Write-Host "[4] Get VM Info"
+    Write-Host "[5] Start a VM"
+    Write-Host "[6] Stop a VM"
+    Write-Host "[7] Edit a VM"
+    Write-Host ""
+    $menuInput = Read-Host 'Please Select an Option'
+    if ($menuInput -eq "1"){
+        Select-VM -folder "BASEVM"
+        createlinkedclone
+    }elseif($menuInput -eq '2'){
+        Create-VS -vmhost $conf.esxi_host
+    }elseif($menuInput -eq '3'){
+        Create-PG
+    }elseif($menuInput -eq '4'){
+        Select-VM -folder "480-Pinelli"
+        GetVM-Info
+    }elseif($menuInput -eq '5'){
+        Select-VM -folder "480-Pinelli"
+        StartVM
+    }elseif($menuInput -eq '6'){
+        Select-VM -folder "480-Pinelli"
+        StopVM
+    }elseif($menuInput -eq '7'){
+        Select-VM -folder "480-Pinelli"
+        Edit-VM
+    }else{
+        Write-Host -ForegroundColor "Red" "Invalid Selection."
+        main_menu
+    }
 }
 
 main_menu

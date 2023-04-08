@@ -151,13 +151,30 @@ function StopVM ()
     return_to_main
 }
 
-function Change-NetworkAdapter ()
-{   
-    Get-NetworkAdapter -VM $global:selected_vm2 | Select Name
-    $net_adapter_q = Read-Host -Prompt "Please select which network adapter you want to change"
-    $net_adapter = Get-NetworkAdapter -VM $global:selected_vm2 -Name $net_adapter_q
-    Get-VirtualPortGroup | Select Name
-    $new_net = Read-Host -Prompt "Please select which network you want to change to"
-    Set-NetworkAdapter -NetworkAdapter $net_adapter -NetworkName $new_net
-    return_to_main
+function Edit-VM ()
+{
+    Write-Host "Options"
+    Write-Host "[1] Change the Network Adapter "
+    Write-Host "[2] Change the Memory (GB)" 
+    Write-Host "[3] Change CPU Count"
+    Write-Host ""
+    $menuInput = Read-Host 'Please Select an Option'
+    if ($menuInput -eq "1"){
+        Get-NetworkAdapter -VM $global:selected_vm2 | Select Name
+        $net_adapter_q = Read-Host -Prompt "Please select which network adapter you want to change"
+        $net_adapter = Get-NetworkAdapter -VM $global:selected_vm2 -Name $net_adapter_q
+        Get-VirtualPortGroup | Select Name
+        $new_net = Read-Host -Prompt "Please select which network you want to change to"
+        Set-NetworkAdapter -NetworkAdapter $net_adapter -NetworkName $new_net
+        return_to_main
+    }elseif($menuInput -eq '2'){
+        $new_ram = Read-Host -Prompt "Enter the new amount of memory (GB)"
+        Set-VM -VM $global:selected_vm2 -MemoryGB $new_ram
+    }elseif($menuInput -eq '3'){
+        $new_cpu = Read-Host -Prompt "Enter the new amount of CPU cores"
+        Set-VM -VM $global:selected_vm2 -NumCpu $new_cpu
+    }else{
+        Write-Host -ForegroundColor "Red" "Invalid Selection."
+        Edit-VM
+    }
 }
