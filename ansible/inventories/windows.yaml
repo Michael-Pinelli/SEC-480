@@ -1,0 +1,21 @@
+windows:
+  hosts:
+  children:
+    windows-servers:
+      hosts:
+        10.0.5.10:
+          hostname: dc-blue1
+      vars:
+        ou_structure:
+          - name: "Blue1"
+            children:
+              - name: "Accounts"
+                children:
+                  - name: "Groups"
+              - name: "Computers"
+                children:
+                  - name: "Servers"
+                  - name: "Workstations"
+
+  vars:
+    ansible_user: deployer

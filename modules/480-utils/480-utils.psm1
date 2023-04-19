@@ -157,6 +157,7 @@ function Edit-VM ()
     Write-Host "[1] Change the Network Adapter "
     Write-Host "[2] Change the Memory (GB)" 
     Write-Host "[3] Change CPU Count"
+    Write-Host "[4] Set IP, Netmask, Gateway, DNS (Windows Only)"
     Write-Host ""
     $menuInput = Read-Host 'Please Select an Option'
     if ($menuInput -eq "1"){
@@ -173,6 +174,18 @@ function Edit-VM ()
     }elseif($menuInput -eq '3'){
         $new_cpu = Read-Host -Prompt "Enter the new amount of CPU cores"
         Set-VM -VM $global:selected_vm2 -NumCpu $new_cpu
+    }elseif($menuInput -eq '4'){
+        $ip = Read-Host -Prompt "Please enter the new IP"
+        $netmask = Read-Host -Prompt "Please enter the new Netmask"
+        $gateway = Read-Host -Prompt "Please enter the new Gateway"
+        $dns1 = Read-Host -Prompt "Please enter the new primary DNS"
+        $dns2 = Read-Host -Prompt "Please enter the new secondary DNS"
+        $cmd = @"
+        netsh interface ip set address "Local Area Connection" static $ip $netmask $gateway 1"
+        netsh interface ip add dns name="Local Area Connection" source=static addr=$dns1 register=primary
+        netsh interface ip add dns name="Local Area Connection" source=static addr=$dns2 index=2
+"@
+        Invoke-VMScript -VM $global:selected_vm2 -GuestCredential (Get-Credential) -ScriptText $cmd -ScriptType bat
     }else{
         Write-Host -ForegroundColor "Red" "Invalid Selection."
         Edit-VM
