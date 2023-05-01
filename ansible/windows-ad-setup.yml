@@ -23,16 +23,26 @@
       win_user:
         name: Administrator
         password: "{{ local_admin_pass }}"
-
+    
+    - name: Install Chocolatey
+      win_chocolatey:
+        name: chocolatey
+        state: present
+      
+    - name: Install AD PS Module
+      win_chocolatey:
+        name: RSAT-AD-Powershell
+        state: present
+        
     - name: Set hostname
       win_hostname:
         name: "{{ hostname }}"
 
-    #- name: Restart
-    #  win_reboot:
-    #    reboot_timeout_sec: 300
-    #    msg: Restarting Machine!!
-    #    post_reboot_delay: 30
+    - name: Restart
+      win_reboot:
+        reboot_timeout_sec: 300
+        msg: Restarting Machine!!
+        post_reboot_delay: 30
 
     - name: Install AD
       win_feature:
@@ -69,11 +79,8 @@
 
     - name: Reboot if needed
       win_reboot:
+        reboot_timeout_sec: 300
       when: domain_created.reboot_required
-
-    - name: Wait for host
-      wait_for_connection:
-        timeout: 300
 
     - name: Create OU structure
       win_domain:

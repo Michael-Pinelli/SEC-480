@@ -8,5 +8,8 @@ windows:
     ansible_shell_type: powershell
     shell_type: powershell
     domain_admin_group: "Domain Admins"
-    
+    local_admin_pass: "!!Maxie123123"
+    domain_name: "pinelli.local"
+    domain_admin_user: "Administrator"
+    domain_admin_password: "!!Maxie123123"
 
