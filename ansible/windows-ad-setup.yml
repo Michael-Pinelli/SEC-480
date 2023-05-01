@@ -1,5 +1,8 @@
 - name: Set local administrator password and hostname, create new forest, and create OU structure
   hosts: windows_servers
+  become: true
+  become_method: runas
+  become_user: Administrator
 
   vars_prompt:
     - name: local_admin_pass
@@ -22,8 +25,25 @@
 
     - name: Set hostname
       win_hostname:
-        name: "{{ hostname }}.{{ domain_name }}"
-        restart: yes
+        name: "{{ hostname }}"
+
+    - name: Install AD
+      win_feature:
+        name: AD-Domain-Services
+        state: present
+
+    - name: Promote to DC
+      win_domain_controller:
+        domain_name: "{{ domain_name }}"
+        safe_mode_password: "{{ local_admin_pass }}"
+        domain_admin_user: "{{ domain_admin_user }}"
+        domain_admin_pass: "{{ domain_admin_password }}"
+
+    - name: Restart
+      win_reboot:
+        reboot_timeout_sec: 300
+        msg: Restarting Machine!!
+        post_reboot_delay: 30
 
     - name: Create new forest
       win_domain:
@@ -35,19 +55,29 @@
       register: domain_created
 
     - name: Create OU structure
-      win_domain_ou:
-        domain_username: "{{ domain_admin_username }}"
-        domain_password: "{{ domain_admin_password }}"
-        name: "{{ item.name }}"
-        parent: "{{ item.parent }}"
-        description: "{{ item.description }}"
-      loop: "{{ ou_structure }}"
-    
+      win_domain:
+        dns_domain_name: "{{ domain_name }}"
+        ou:
+          - name: Blue1
+            children:
+              - name: Accounts
+                children:
+                  - name: Groups
+              - name: Computers
+                children:
+                  - name: Servers
+                  - name: Workstations
+
     - name: Add local admin account to domain admins group
       win_domain_group_membership:
-        name: "Domain Admins"
-        members: "Administrator"
+        group_name: "{{ domain_name }}\Domain Admins"
+        members: "{{ domain_name }}\{{ ansible_user }}"
         state: present
-        domain_username: "{{ domain_admin_username }}"
+        domain_username: "{{ domain_admin_user }}"
         domain_password: "{{ domain_admin_password }}"
-        domain_server: "{{ hostname }}"
+
+    - name: Restart
+      win_reboot:
+        reboot_timeout_sec: 300
+        msg: Final Restart!!
+        post_reboot_delay: 30
