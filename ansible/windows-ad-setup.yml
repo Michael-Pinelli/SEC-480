@@ -77,3 +77,22 @@
     #     Add-ADGroupMember -Identity "Domain Admins" -Members "{{ ansible_user }}"
     #   become_method: runas
     #   become_user: "{{ domain_admin_user }}"
+    
+     - name: Create OUs
+      win_shell: |
+        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "{{ domain_admin_user }}", "{{ domain_admin_password | to_nice_yaml }}"
+
+        $ou_names = "{{ ou_names | join('","') }}"
+
+        foreach ($ou_name in $ou_names) {
+            $ou_path = "OU=$ou_name,DC={{ domain_name.split('.') | join(',DC=') }}"
+
+            try {
+                $ou = Get-ADOrganizationalUnit -Identity $ou_path -Credential $cred -ErrorAction Stop
+                Write-Host "OU already exists: $ou_path"
+            }
+            catch {
+                New-ADOrganizationalUnit -Name $ou_name -Path "DC={{ domain_name.split('.') | join(',DC=') }}" -Credential $cred -ErrorAction Stop
+                Write-Host "Created OU: $ou_path"
+            }
+        }
