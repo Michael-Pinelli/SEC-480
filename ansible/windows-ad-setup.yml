@@ -5,18 +5,12 @@
   become_method: runas
   become_user: Administrator
 
-  #vars_prompt:
-    #- name: local_admin_pass
-    #  prompt: "Enter your local admin password"
+  vars_prompt:
+    - name: local_admin_pass
+      prompt: "Enter your local admin password"
 
-    #- name: domain_name
-    #  prompt: "Enter your domain name"
-
-    #- name: domain_admin_user
-    #  prompt: "Enter your domain admin username"
-
-    #- name: domain_admin_password
-    #  prompt: "Enter your domain admin password"
+    - name: domain_admin_password
+      prompt: "Enter your domain admin password"
 
   tasks:
     - name: Set local administrator password
