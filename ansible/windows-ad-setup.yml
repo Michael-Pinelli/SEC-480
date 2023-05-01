@@ -19,80 +19,52 @@
     #  prompt: "Enter your domain admin password"
 
   tasks:
-    # - name: Set local administrator password
-    #   win_user:
-    #     name: Administrator
-    #     password: "{{ local_admin_pass }}"
+    - name: Set local administrator password
+      win_user:
+        name: Administrator
+        password: "{{ local_admin_pass }}"
         
-    # - name: Set hostname
-    #   win_hostname:
-    #     name: "{{ hostname }}"
+    - name: Set hostname
+      win_hostname:
+        name: "{{ hostname }}"
 
-    # - name: Restart
-    #   win_reboot:
-    #     reboot_timeout_sec: 300
-    #     msg: Restarting Machine!!
-    #     post_reboot_delay: 30
+    - name: Restart
+      win_reboot:
+        reboot_timeout_sec: 300
+        msg: Restarting Machine!!
+        post_reboot_delay: 30
 
-    # - name: Install AD
-    #   win_feature:
-    #     name: AD-Domain-Services
-    #     state: present
+    - name: Install AD
+      win_feature:
+        name: AD-Domain-Services
+        state: present
 
-    # - name: Create new forest
-    #   win_domain:
-    #     dns_domain_name: "{{ domain_name }}"
-    #     domain_admin_user: "{{ domain_admin_user }}@{{ domain_name }}"
-    #     domain_admin_password: "{{ domain_admin_password }}"
-    #     safe_mode_password: "{{ local_admin_pass }}"
-    #     state: domain
-    #   register: domain_created
-
-    # - name: Reboot if needed
-    #   win_reboot:
-    #     reboot_timeout_sec: 600
-    #     post_reboot_delay: 30
-    #   when: domain_created.reboot_required
-
-    - name: Create OU structure
+    - name: Create new forest
       win_domain:
         dns_domain_name: "{{ domain_name }}"
+        domain_admin_user: "{{ domain_admin_user }}@{{ domain_name }}"
+        domain_admin_password: "{{ domain_admin_password }}"
         safe_mode_password: "{{ local_admin_pass }}"
-        ou_path:
-          - "OU=Blue1,DC={{ domain }},DC=local"
-          - "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
-          - "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
-          - "OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
-          - "OU=Servers,OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
-          - "OU=Workstations,OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
-        state: present
-        username: "{{ domain_admin_user }}"
-        password: "{{ domain_admin_password }}"
-      become: true
+        state: domain
+      register: domain_created
+
+    - name: Reboot if needed
+      win_reboot:
+        reboot_timeout_sec: 600
+        post_reboot_delay: 30
+      when: domain_created.reboot_required
+
+    - name: Create OUs
+      win_shell: |
+        New-ADOrganizationalUnit -Name "Blue1" -Path "DC={{ domain }},DC=local"
+        New-ADOrganizationalUnit -Name "Accounts" -Path "OU=Blue1,DC={{ domain }},DC=local"
+        New-ADOrganizationalUnit -Name "Groups" -Path "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        New-ADOrganizationalUnit -Name "Computers" -Path "OU=Blue1,DC={{ domain }},DC=local"
+        New-ADOrganizationalUnit -Name "Servers" -Path "OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
+        New-ADOrganizationalUnit -Name "Workstations" -Path "OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
+
+    - name: Add ansible user account to domain admins group
+      win_shell: |
+        Add-ADGroupMember -Identity "Domain Admins" -Members "{{ ansible_user }}"
       become_method: runas
       become_user: "{{ domain_admin_user }}"
-
-    # - name: Add ansible user account to domain admins group
-    #   win_shell: |
-    #     Add-ADGroupMember -Identity "Domain Admins" -Members "{{ ansible_user }}"
-    #   become_method: runas
-    #   become_user: "{{ domain_admin_user }}"
-    
-     - name: Create OUs
-      win_shell: |
-        $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "{{ domain_admin_user }}", "{{ domain_admin_password | to_nice_yaml }}"
-
-        $ou_names = "{{ ou_names | join('","') }}"
-
-        foreach ($ou_name in $ou_names) {
-            $ou_path = "OU=$ou_name,DC={{ domain_name.split('.') | join(',DC=') }}"
-
-            try {
-                $ou = Get-ADOrganizationalUnit -Identity $ou_path -Credential $cred -ErrorAction Stop
-                Write-Host "OU already exists: $ou_path"
-            }
-            catch {
-                New-ADOrganizationalUnit -Name $ou_name -Path "DC={{ domain_name.split('.') | join(',DC=') }}" -Credential $cred -ErrorAction Stop
-                Write-Host "Created OU: $ou_path"
-            }
-        }
