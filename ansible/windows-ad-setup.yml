@@ -19,94 +19,61 @@
     #  prompt: "Enter your domain admin password"
 
   tasks:
-    - name: Set local administrator password
-      win_user:
-        name: Administrator
-        password: "{{ local_admin_pass }}"
-    
-    - name: Install Chocolatey
-      win_chocolatey:
-        name: chocolatey
-        state: present
-      
-    - name: Install AD PS Module
-      win_chocolatey:
-        name: RSAT-AD-Powershell
-        state: present
+    # - name: Set local administrator password
+    #   win_user:
+    #     name: Administrator
+    #     password: "{{ local_admin_pass }}"
         
-    - name: Set hostname
-      win_hostname:
-        name: "{{ hostname }}"
+    # - name: Set hostname
+    #   win_hostname:
+    #     name: "{{ hostname }}"
 
-    - name: Restart
-      win_reboot:
-        reboot_timeout_sec: 300
-        msg: Restarting Machine!!
-        post_reboot_delay: 30
+    # - name: Restart
+    #   win_reboot:
+    #     reboot_timeout_sec: 300
+    #     msg: Restarting Machine!!
+    #     post_reboot_delay: 30
 
-    - name: Install AD
-      win_feature:
-        name: AD-Domain-Services
-        state: present
+    # - name: Install AD
+    #   win_feature:
+    #     name: AD-Domain-Services
+    #     state: present
 
-    #- name: Promote to DC
-    #  win_domain_controller:
-    #   dns_domain_name: "{{ domain_name }}"
-    #    safe_mode_password: "{{ local_admin_pass }}"
-    #    domain_admin_user: "{{ domain_admin_user }}"
-    #    domain_admin_password: "{{ domain_admin_pass }}"
-    #    domain_type: forest
-    #    install_dns: yes
-    #    state: domain
-    #  register: dcpromo_result
+    # - name: Create new forest
+    #   win_domain:
+    #     dns_domain_name: "{{ domain_name }}"
+    #     domain_admin_user: "{{ domain_admin_user }}@{{ domain_name }}"
+    #     domain_admin_password: "{{ domain_admin_password }}"
+    #     safe_mode_password: "{{ local_admin_pass }}"
+    #     state: domain
+    #   register: domain_created
 
-    #- name: Reboot if needed
-    #  win_reboot:
-    #  when: dcpromo_result.reboot_required
-
-    #- name: Wait for host
-    #  wait_for_connection:
-    #    timeout: 300
-
-    - name: Create new forest
-      win_domain:
-        dns_domain_name: "{{ domain_name }}"
-        domain_admin_user: "{{ domain_admin_user }}@{{ domain_name }}"
-        domain_admin_password: "{{ domain_admin_password }}"
-        safe_mode_password: "{{ local_admin_pass }}"
-        state: domain
-      register: domain_created
-
-    - name: Reboot if needed
-      win_reboot:
-        reboot_timeout_sec: 300
-      when: domain_created.reboot_required
+    # - name: Reboot if needed
+    #   win_reboot:
+    #     reboot_timeout_sec: 600
+    #     post_reboot_delay: 30
+    #   when: domain_created.reboot_required
 
     - name: Create OU structure
       win_domain:
         dns_domain_name: "{{ domain_name }}"
         safe_mode_password: "{{ local_admin_pass }}"
-        ou:
-          - name: Blue1
-            children:
-              - name: Accounts
-                children:
-                  - name: Groups
-              - name: Computers
-                children:
-                  - name: Servers
-                  - name: Workstations
-
-    - name: Restart
-      win_reboot:
-        reboot_timeout_sec: 300
-        msg: Final Restart!!
-        post_reboot_delay: 30
-
-    - name: Add ansible user account to domain admins group
-      win_domain_group_membership:
-        name: "{{ domain_admin_group }}"
-        members: "{{ ansible_user }}"
+        ou_path:
+          - "OU=Blue1,DC={{ domain }},DC=local"
+          - "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+          - "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+          - "OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
+          - "OU=Servers,OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
+          - "OU=Workstations,OU=Computers,OU=Blue1,DC={{ domain }},DC=local"
         state: present
-        domain_username: "{{ domain_admin_user }}"
-        domain_password: "{{ domain_admin_password }}"
+        username: "{{ domain_admin_user }}"
+        password: "{{ domain_admin_password }}"
+      become: true
+      become_method: runas
+      become_user: "{{ domain_admin_user }}"
+
+    # - name: Add ansible user account to domain admins group
+    #   win_shell: |
+    #     Add-ADGroupMember -Identity "Domain Admins" -Members "{{ ansible_user }}"
+    #   become_method: runas
+    #   become_user: "{{ domain_admin_user }}"
