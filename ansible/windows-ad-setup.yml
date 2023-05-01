@@ -1,21 +1,22 @@
+#usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows-ad-setup.yml -K
 - name: Set local administrator password and hostname, create new forest, and create OU structure
-  hosts: windows_servers
+  hosts: windows
   become: true
   become_method: runas
   become_user: Administrator
 
-  vars_prompt:
-    - name: local_admin_pass
-      prompt: "Enter your local admin password"
+  #vars_prompt:
+    #- name: local_admin_pass
+    #  prompt: "Enter your local admin password"
 
-    - name: domain_name
-      prompt: "Enter your domain name"
+    #- name: domain_name
+    #  prompt: "Enter your domain name"
 
-    - name: domain_admin_user
-      prompt: "Enter your domain admin username"
+    #- name: domain_admin_user
+    #  prompt: "Enter your domain admin username"
 
-    - name: domain_admin_password
-      prompt: "Enter your domain admin password"
+    #- name: domain_admin_password
+    #  prompt: "Enter your domain admin password"
 
   tasks:
     - name: Set local administrator password
@@ -27,23 +28,35 @@
       win_hostname:
         name: "{{ hostname }}"
 
+    #- name: Restart
+    #  win_reboot:
+    #    reboot_timeout_sec: 300
+    #    msg: Restarting Machine!!
+    #    post_reboot_delay: 30
+
     - name: Install AD
       win_feature:
         name: AD-Domain-Services
         state: present
 
-    - name: Promote to DC
-      win_domain_controller:
-        domain_name: "{{ domain_name }}"
-        safe_mode_password: "{{ local_admin_pass }}"
-        domain_admin_user: "{{ domain_admin_user }}"
-        domain_admin_pass: "{{ domain_admin_password }}"
+    #- name: Promote to DC
+    #  win_domain_controller:
+    #   dns_domain_name: "{{ domain_name }}"
+    #    safe_mode_password: "{{ local_admin_pass }}"
+    #    domain_admin_user: "{{ domain_admin_user }}"
+    #    domain_admin_password: "{{ domain_admin_pass }}"
+    #    domain_type: forest
+    #    install_dns: yes
+    #    state: domain
+    #  register: dcpromo_result
 
-    - name: Restart
-      win_reboot:
-        reboot_timeout_sec: 300
-        msg: Restarting Machine!!
-        post_reboot_delay: 30
+    #- name: Reboot if needed
+    #  win_reboot:
+    #  when: dcpromo_result.reboot_required
+
+    #- name: Wait for host
+    #  wait_for_connection:
+    #    timeout: 300
 
     - name: Create new forest
       win_domain:
@@ -54,9 +67,18 @@
         state: domain
       register: domain_created
 
+    - name: Reboot if needed
+      win_reboot:
+      when: domain_created.reboot_required
+
+    - name: Wait for host
+      wait_for_connection:
+        timeout: 300
+
     - name: Create OU structure
       win_domain:
         dns_domain_name: "{{ domain_name }}"
+        safe_mode_password: "{{ local_admin_pass }}"
         ou:
           - name: Blue1
             children:
@@ -68,16 +90,16 @@
                   - name: Servers
                   - name: Workstations
 
-    - name: Add local admin account to domain admins group
-      win_domain_group_membership:
-        group_name: "{{ domain_name }}\Domain Admins"
-        members: "{{ domain_name }}\{{ ansible_user }}"
-        state: present
-        domain_username: "{{ domain_admin_user }}"
-        domain_password: "{{ domain_admin_password }}"
-
     - name: Restart
       win_reboot:
         reboot_timeout_sec: 300
         msg: Final Restart!!
         post_reboot_delay: 30
+
+    - name: Add ansible user account to domain admins group
+      win_domain_group_membership:
+        name: "{{ domain_admin_group }}"
+        members: "{{ ansible_user }}"
+        state: present
+        domain_username: "{{ domain_admin_user }}"
+        domain_password: "{{ domain_admin_password }}"

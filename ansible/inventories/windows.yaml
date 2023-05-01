@@ -7,4 +7,6 @@ windows:
     ansible_user: deployer
     ansible_shell_type: powershell
     shell_type: powershell
+    domain_admin_group: "Domain Admins"
     
+
