@@ -15,3 +15,4 @@ windows:
     domain: "Blue1"
     domain_name: "{{ domain }}.local"
     domain_admin_user: "Administrator"
+    csv_path: files/windows/users.csv
