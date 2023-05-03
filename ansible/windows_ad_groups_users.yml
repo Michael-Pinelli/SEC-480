@@ -21,7 +21,8 @@
       with_items: "{{ users.list }}"
 
     - name: Generate Random password
-       csv_data_with_passwords: "{{ csv_data_with_passwords | default([]) + [item | combine({'password': lookup('password', '/dev/null', chars='ascii_letters,digits', length=16)})] }}"
+      set_fact:
+        users: "{{ users | default([]) + [item | combine({'password': lookup('password', '/dev/null', chars='ascii_letters,digits', length=16)})] }}"
       loop: "{{ users.list }}"
       
 

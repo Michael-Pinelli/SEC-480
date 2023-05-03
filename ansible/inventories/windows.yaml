@@ -16,4 +16,4 @@ windows:
     domain_name: "{{ domain }}.local"
     domain_admin_user: "Administrator"
     csv_path: files/windows/users.csv
-    password: "{{ lookup('password', '/dev/null', chars='ascii_letters,digits', length=16) }}"
+    #password: "{{ lookup('password', '/dev/null', chars='ascii_letters,digits', length=16) }}"
