@@ -1,0 +1,46 @@
+#usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows-file-services.yml -K
+- name: Create Users and Groups
+  hosts: windows_file
+
+  vars_prompt:
+    - name: domain_admin_pass
+      prompt: "Enter your domain admin password"
+
+  tasks:
+    - name: Set Static IP
+      win_network_adapter_ipv4:
+        interface_index: 0
+        ipv4_address: "{{ ip_address }}"
+        subnet_mask: "{{ subnet_mask }}"
+        gateway: "{{ gateway }}"
+        dns_servers: "{{ dns_servers }}"
+
+    - name: Join Domain
+      win_domain_membership:
+        hostname: "{{ hostname }}"
+        domain_name: "{{ domain_name }}"
+        domain_user: "{{ ansible_user }}"
+        domain_password: "{{ domain_admin_pass }}"
+    
+    - name: Restart
+      win_reboot:
+        reboot_timeout_sec: 300
+        msg: Restarting Machine!!
+        post_reboot_delay: 30
+    
+    - name: Create Share 1
+      win_share:
+       name: "{{ share1 }}"
+       path: "{{ share_dir }}\{{ share1 }}"
+       change: "{{ share1_group }}"
+       state: present
+      
+    - name: Create Share 2
+      win_share:
+       name: "{{ share2 }}"
+       path: "{{ share_dir }}\{{ share2 }}"
+       change: "{{ share2_group }}"
+       state: present
+    
+    - name: Map Drives
+      

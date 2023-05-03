@@ -5,6 +5,21 @@ windows:
       hosts:
         192.168.7.75:
           hostname: dc-blue1
+    windows_file:
+      hosts:
+        192.168.7.75:
+          hostname: file-blue1 
+          ip_address: 192.168.7.
+          subnet_mask: 255.255.255.0
+          gateway: 192.168.7.250
+          dns_servers:
+            - 8.8.8.8
+            - 8.8.4.4 
+          share_dir: "C:\Shares"
+          share1: HR
+          share2: Marketing
+          share1_group: HR
+          share2_group: Marketing
     windows_wks:
       hosts:
 
@@ -16,4 +31,4 @@ windows:
     domain_name: "{{ domain }}.local"
     domain_admin_user: "Administrator"
     csv_path: files/windows/users.csv
-    #password: "{{ lookup('password', '/dev/null', chars='ascii_letters,digits', length=16) }}"
+    
