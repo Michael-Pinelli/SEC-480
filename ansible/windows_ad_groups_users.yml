@@ -9,7 +9,7 @@
   tasks:
     - name: Read CSV File
       read_csv:
-        path: files/windows/users.csv
+        path: "{{ csv_path }}"
       register: users
       delegate_to: 127.0.0.1
       vars:
@@ -20,6 +20,10 @@
         msg: "{{ item.name }} - {{ item.group }}"
       with_items: "{{ users.list }}"
 
+    - name: Generate Random password
+      set_fact:
+        users: "{{ users.list | map('combine', {'password': lookup('password', '/dev/null length=14 chars=ascii_letters,digits')}) | list }}"
+
     - name: Create Group
       win_domain_group:
         domain_username: "{{ ansible_user }}"
@@ -28,7 +32,7 @@
         path: "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
         state: present
         scope: global
-      loop: "{{ users.list }}"
+      loop: "{{ users }}"
 
     - name: Create User
       win_domain_user:
@@ -36,14 +40,11 @@
         domain_password: "{{ domain_admin_pass }}"
         name: "{{ item.name }}"
         groups: "{{ item.group }}, Domain Users"
-        password: "{{ password }}"
+        password: "{{ item.password }}"
         path: "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
         password_never_expires: true
         state: present
-      loop: "{{ users.list }}"
-      vars:
-        password: "{{ lookup('password', '/dev/null length=16 chars=ascii_letters,digits,punctuation') }}"
-      register: created_users
+      loop: "{{ users }}"
     
     # - name: Add User to correct group
     #   win_shell: |
@@ -55,5 +56,5 @@
     
     - name: Print User Info
       debug:
-        msg: "Username: {{ item.name }} Password: {{ password }}"
-      loop: "{{ created_users.results }}"
+        msg: "Username: {{ item.name }} Password: {{ item.password }}"
+      loop: "{{ users }}"
