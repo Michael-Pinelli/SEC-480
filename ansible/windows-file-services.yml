@@ -42,5 +42,26 @@
        change: "{{ share2_group }}"
        state: present
     
-    - name: Map Drives
+    - name: Create Group Policy to Map Drives
+  win_shell: |
+    $HRPath = "\\fileserver\HR"
+    $MarketingPath = "\\fileserver\Marketing"
+
+    $HRGroupPolicy = New-GPO -Name "HR Group Policy"
+    $MarketingGroupPolicy = New-GPO -Name "Marketing Group Policy"
+
+    $HRDriveMap = New-PSDrive -Name "HR" -PSProvider FileSystem -Root $HRPath -Persist
+    $MarketingDriveMap = New-PSDrive -Name "Marketing" -PSProvider FileSystem -Root $MarketingPath -Persist
+
+    $HRGroup = Get-ADGroup -Identity "HR"
+    $MarketingGroup = Get-ADGroup -Identity "Marketing"
+
+    $HRDriveMapItem = New-ItemProperty -Path "HKCU:\Network\HR" -Name RemotePath -Value $HRPath -PropertyType String
+    $MarketingDriveMapItem = New-ItemProperty -Path "HKCU:\Network\Marketing" -Name RemotePath -Value $MarketingPath -PropertyType String
+
+    New-GPLink -Name "HR Group Policy" -Target "ou=HR Users,dc=example,dc=com"
+    New-GPLink -Name "Marketing Group Policy" -Target "ou=Marketing Users,dc=example,dc=com"
+  become: true
+  become_user: Administrator
+
       
