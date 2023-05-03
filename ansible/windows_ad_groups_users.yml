@@ -1,0 +1,49 @@
+#usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows_ad_groups_users.yml -K
+- name: Create Users and Groups
+  hosts: windows_dc
+  become: true
+  become_method: runas
+  become_user: Administrator
+
+  tasks:
+    - name: Read CSV File
+      read_csv:
+        path: files/windows/users.csv
+      register: users
+      delegate_to: 127.0.0.1
+      vars:
+        ansible_shell_type:
+    
+    - name: An Ansible Loop
+      debug:
+        msg: "{{ item.name }} - {{ item.group }}"
+      with_items: "{{ users.list }}"
+
+    - name: Create Group
+      win_group:
+        name: "{{ item.group }}"
+        ou_path: "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        state: present
+      loop: "{{ users.list }}"
+
+    - name: Create User
+      win_user:
+        name: "{{ item.name }}"
+        password: "{{ lookup('win_random_passowrd', {'length': password_length, 'complexity': password_special_chars}) }}"
+        ou_path: "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        state: present
+      loop: "{{ users.list }}"
+      register: created_users
+    
+    - name: Add User to correct group
+      win_shell: |
+        Add-ADGroupMember -Identity "{{ item.group }}" -Members "{{ item.name }}"
+      loop: "{{ users.list }}"
+      when: item.group is defined
+      become_method: runas
+      become_user: "{{ domain_admin_user }}"
+    
+    - name: Print User Info
+      debug:
+        msg: "User '{{ item.name }}' created with password '{{ item.password }}'"
+      loop: "{{ created_users.results }}"

@@ -1,7 +1,12 @@
 windows:
   hosts:
-    192.168.7.75:
-      hostname: dc-blue1
+  children:
+    windows_dc:
+      hosts:
+        192.168.7.75:
+          hostname: dc-blue1
+    windows_wks:
+      hosts:
 
   vars:
     ansible_user: deployer
@@ -10,3 +15,5 @@ windows:
     domain: "blue1"
     domain_name: "{{ domain }}.local"
     domain_admin_user: "Administrator"
+    password_length: 16
+    password_special_chars: true
