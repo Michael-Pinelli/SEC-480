@@ -21,11 +21,11 @@
         msg: "{{ item.name }} - {{ item.group }}"
       with_items: "{{ users.list }}"
 
-    - name: Generate Random passwords Part 1
+    - name: Generate Random Passwords Part 1
       set_fact:
         users_dict: "{{ users.dict }}"
     
-    - name: Generate Random password Part 2
+    - name: Generate Random Password Part 2
       set_fact:
         users_dict: "{{ users_dict | combine(new_item, recursive=true) }}"
       vars:
