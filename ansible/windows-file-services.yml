@@ -7,61 +7,65 @@
       prompt: "Enter your domain admin password"
 
   tasks:
-    - name: Set Static IP
-      win_network_adapter_ipv4:
-        interface_index: 0
-        ipv4_address: "{{ ip_address }}"
-        subnet_mask: "{{ subnet_mask }}"
-        gateway: "{{ gateway }}"
-        dns_servers: "{{ dns_servers }}"
+    # - name: Set Static IP
+    #   win_shell: |
+    #     $adapter = Get-NetAdapter -Name "Ethernet0"
+    #     $adapter | New-NetIPAddress -AddressFamily IPv4 -IPAddress "{{ ip_address }}" -PrefixLength "{{ prefix_length }}" -DefaultGateway "{{ gateway }}"
+    #     $adapter | Set-DnsClientServerAddress -ServerAddresses "{{ dns_servers }}"
 
-    - name: Join Domain
-      win_domain_membership:
-        hostname: "{{ hostname }}"
-        domain_name: "{{ domain_name }}"
-        domain_user: "{{ ansible_user }}"
-        domain_password: "{{ domain_admin_pass }}"
+    # - name: Join Domain
+    #   win_domain_membership:
+    #     hostname: "{{ hostname }}"
+    #     dns_domain_name: "{{ domain_name }}"
+    #     domain_admin_user: "{{ ansible_user }}"
+    #     domain_admin_password: "{{ domain_admin_pass }}"
+    #     state: domain
+    #   register: domain_joined
     
-    - name: Restart
-      win_reboot:
-        reboot_timeout_sec: 300
-        msg: Restarting Machine!!
-        post_reboot_delay: 30
+    # - name: Reboot if needed
+    #   win_reboot:
+    #     reboot_timeout_sec: 600
+    #     post_reboot_delay: 30
+    #   when: domain_joined.reboot_required
+    
+    - name: Create file paths
+      win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ share_dir }}/{{ share1 }}"
+        - "{{ share_dir }}/{{ share2 }}"
     
     - name: Create Share 1
       win_share:
        name: "{{ share1 }}"
-       path: "{{ share_dir }}\{{ share1 }}"
+       path: "{{ share_dir }}/{{ share1 }}"
        change: "{{ share1_group }}"
+       full: "'Domain Admins',Administrators"
+       list: no
        state: present
       
     - name: Create Share 2
       win_share:
        name: "{{ share2 }}"
-       path: "{{ share_dir }}\{{ share2 }}"
+       path: "{{ share_dir }}/{{ share2 }}"
        change: "{{ share2_group }}"
+       full: "'Domain Admins',Administrators"
+       list: no
        state: present
     
-    - name: Create Group Policy to Map Drives
-  win_shell: |
-    $HRPath = "\\fileserver\HR"
-    $MarketingPath = "\\fileserver\Marketing"
-
-    $HRGroupPolicy = New-GPO -Name "HR Group Policy"
-    $MarketingGroupPolicy = New-GPO -Name "Marketing Group Policy"
-
-    $HRDriveMap = New-PSDrive -Name "HR" -PSProvider FileSystem -Root $HRPath -Persist
-    $MarketingDriveMap = New-PSDrive -Name "Marketing" -PSProvider FileSystem -Root $MarketingPath -Persist
-
-    $HRGroup = Get-ADGroup -Identity "HR"
-    $MarketingGroup = Get-ADGroup -Identity "Marketing"
-
-    $HRDriveMapItem = New-ItemProperty -Path "HKCU:\Network\HR" -Name RemotePath -Value $HRPath -PropertyType String
-    $MarketingDriveMapItem = New-ItemProperty -Path "HKCU:\Network\Marketing" -Name RemotePath -Value $MarketingPath -PropertyType String
-
-    New-GPLink -Name "HR Group Policy" -Target "ou=HR Users,dc=example,dc=com"
-    New-GPLink -Name "Marketing Group Policy" -Target "ou=Marketing Users,dc=example,dc=com"
-  become: true
-  become_user: Administrator
-
-      
+    - name: Map Share1
+      win_mapped_drive:
+        letter: H
+        path: "//{{ hostname }}/{{ share1 }}"
+        username: "{{ ansible_user }}"
+        password: "{{ domain_admin_pass }}"
+        state: present
+    
+    - name: Map Share2
+      win_mapped_drive:
+        letter: M
+        path: "//{{ hostname }}/{{ share2 }}"
+        username: "{{ ansible_user }}"
+        password: "{{ domain_admin_pass }}"
+        state: present

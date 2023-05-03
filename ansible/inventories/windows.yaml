@@ -7,15 +7,13 @@ windows:
           hostname: dc-blue1
     windows_file:
       hosts:
-        192.168.7.75:
+        192.168.7.72:
           hostname: file-blue1 
-          ip_address: 192.168.7.
-          subnet_mask: 255.255.255.0
+          ip_address: 192.168.7.72
+          prefix_length: 24
           gateway: 192.168.7.250
-          dns_servers:
-            - 8.8.8.8
-            - 8.8.4.4 
-          share_dir: "C:\Shares"
+          dns_servers: "192.168.7.75" 
+          share_dir: "C:/Shares"
           share1: HR
           share2: Marketing
           share1_group: HR
