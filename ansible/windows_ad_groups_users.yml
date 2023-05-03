@@ -21,8 +21,37 @@
       with_items: "{{ users.list }}"
 
     - name: Generate Random password
-       csv_data_with_passwords: "{{ csv_data_with_passwords | default([]) + [item | combine({'password': lookup('password', '/dev/null', chars='ascii_letters,digits', length=16)})] }}"
-      loop: "{{ users.list }}"
+       - name: Parse CSV data with Python
+      ansible.builtin.python:
+        interpreter_python: auto
+        pip_install: ["csv"]
+        vars:
+          rows: []
+        script: |
+          import csv
+          import random
+          import string
+          from io import StringIO
+
+          # Parse CSV data from Ansible command output
+          reader = csv.DictReader(StringIO({{ csv_data.stdout }}))
+          rows = list(reader)
+
+          # Generate random passwords for each row
+          for row in rows:
+            password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            row['password'] = password
+
+          # Write updated CSV data to string
+          output = StringIO()
+          writer = csv.DictWriter(output, fieldnames=reader.fieldnames + ['password'])
+          writer.writeheader()
+          writer.writerows(rows)
+
+          # Set Ansible variable to updated CSV data
+          ansible_facts = {'csv_data': output.getvalue()}
+
+      when: csv_data.stdout_lines is defined
       
 
     - name: Create Group
