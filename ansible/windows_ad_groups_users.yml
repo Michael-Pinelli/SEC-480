@@ -15,11 +15,6 @@
       delegate_to: 127.0.0.1
       vars:
         ansible_shell_type:
-    
-    - name: An Ansible Loop
-      debug:
-        msg: "{{ item.name }} - {{ item.group }}"
-      with_items: "{{ users.list }}"
 
     - name: Generate Random Passwords Part 1
       set_fact:

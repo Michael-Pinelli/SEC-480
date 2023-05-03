@@ -7,26 +7,26 @@
       prompt: "Enter your domain admin password"
 
   tasks:
-    # - name: Set Static IP
-    #   win_shell: |
-    #     $adapter = Get-NetAdapter -Name "Ethernet0"
-    #     $adapter | New-NetIPAddress -AddressFamily IPv4 -IPAddress "{{ ip_address }}" -PrefixLength "{{ prefix_length }}" -DefaultGateway "{{ gateway }}"
-    #     $adapter | Set-DnsClientServerAddress -ServerAddresses "{{ dns_servers }}"
+    - name: Set Static IP
+      win_shell: |
+        $adapter = Get-NetAdapter -Name "Ethernet0"
+        $adapter | New-NetIPAddress -AddressFamily IPv4 -IPAddress "{{ ip_address }}" -PrefixLength "{{ prefix_length }}" -DefaultGateway "{{ gateway }}"
+        $adapter | Set-DnsClientServerAddress -ServerAddresses "{{ dns_servers }}"
 
-    # - name: Join Domain
-    #   win_domain_membership:
-    #     hostname: "{{ hostname }}"
-    #     dns_domain_name: "{{ domain_name }}"
-    #     domain_admin_user: "{{ ansible_user }}"
-    #     domain_admin_password: "{{ domain_admin_pass }}"
-    #     state: domain
-    #   register: domain_joined
+    - name: Join Domain
+      win_domain_membership:
+        hostname: "{{ hostname }}"
+        dns_domain_name: "{{ domain_name }}"
+        domain_admin_user: "{{ ansible_user }}"
+        domain_admin_password: "{{ domain_admin_pass }}"
+        state: domain
+      register: domain_joined
     
-    # - name: Reboot if needed
-    #   win_reboot:
-    #     reboot_timeout_sec: 600
-    #     post_reboot_delay: 30
-    #   when: domain_joined.reboot_required
+    - name: Reboot if needed
+      win_reboot:
+        reboot_timeout_sec: 600
+        post_reboot_delay: 30
+      when: domain_joined.reboot_required
     
     - name: Create file paths
       win_file:
@@ -41,7 +41,7 @@
        name: "{{ share1 }}"
        path: "{{ share_dir }}/{{ share1 }}"
        change: "{{ share1_group }}"
-       full: "'Domain Admins',Administrators"
+       full: "Domain Admins,Administrators"
        list: no
        state: present
       
@@ -50,22 +50,22 @@
        name: "{{ share2 }}"
        path: "{{ share_dir }}/{{ share2 }}"
        change: "{{ share2_group }}"
-       full: "'Domain Admins',Administrators"
+       full: "Domain Admins,Administrators"
        list: no
        state: present
     
-    - name: Map Share1
-      win_mapped_drive:
-        letter: H
-        path: "//{{ hostname }}/{{ share1 }}"
-        username: "{{ ansible_user }}"
-        password: "{{ domain_admin_pass }}"
-        state: present
+    # - name: Map Share1
+    #   win_mapped_drive:
+    #     letter: H
+    #     path: "//{{ hostname }}@{{ domain_name }}/{{ share1 }}"
+    #     username: "{{ ansible_user }}"
+    #     password: "{{ domain_admin_pass }}"
+    #     state: present
     
-    - name: Map Share2
-      win_mapped_drive:
-        letter: M
-        path: "//{{ hostname }}/{{ share2 }}"
-        username: "{{ ansible_user }}"
-        password: "{{ domain_admin_pass }}"
-        state: present
+    # - name: Map Share2
+    #   win_mapped_drive:
+    #     letter: M
+    #     path: "//{{ hostname }}@{{ domain_name }}/{{ share2 }}"
+    #     username: "{{ ansible_user }}"
+    #     password: "{{ domain_admin_pass }}"
+    #     state: present

@@ -1,0 +1,23 @@
+#usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows-wks.yml -K
+- name: Create Users and Groups
+  hosts: windows_wks
+
+  vars_prompt:
+    - name: domain_admin_pass
+      prompt: "Enter your domain admin password"
+
+  tasks:
+    - name: Join Domain
+      win_domain_membership:
+        hostname: "{{ hostname }}"
+        dns_domain_name: "{{ domain_name }}"
+        domain_admin_user: "{{ ansible_user }}"
+        domain_admin_password: "{{ domain_admin_pass }}"
+        state: domain
+      register: domain_joined
+    
+    - name: Reboot if needed
+      win_reboot:
+        reboot_timeout_sec: 600
+        post_reboot_delay: 30
+      when: domain_joined.reboot_required
