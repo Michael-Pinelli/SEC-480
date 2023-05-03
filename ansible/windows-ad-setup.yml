@@ -1,9 +1,6 @@
 #usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows-ad-setup.yml -K
 - name: Set local administrator password and hostname, create new forest, and create OU structure
   hosts: windows
-  become: true
-  become_method: runas
-  become_user: Administrator
 
   vars_prompt:
     - name: local_admin_pass

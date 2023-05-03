@@ -1,9 +1,10 @@
 #usage: ansible-playbook -i inventories/windows.yaml --ask-pass windows_ad_groups_users.yml -K
 - name: Create Users and Groups
   hosts: windows_dc
-  become: true
-  become_method: runas
-  become_user: Administrator
+
+  vars_prompt:
+    - name: domain_admin_pass
+      prompt: "Enter your domain admin password"
 
   tasks:
     - name: Read CSV File
@@ -20,30 +21,39 @@
       with_items: "{{ users.list }}"
 
     - name: Create Group
-      win_group:
+      win_domain_group:
+        domain_username: "{{ ansible_user }}"
+        domain_password: "{{ domain_admin_pass }}"
         name: "{{ item.group }}"
-        ou_path: "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        path: "OU=Groups,OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
         state: present
+        scope: global
       loop: "{{ users.list }}"
 
     - name: Create User
-      win_user:
+      win_domain_user:
+        domain_username: "{{ ansible_user }}"
+        domain_password: "{{ domain_admin_pass }}"
         name: "{{ item.name }}"
-        password: "{{ lookup('win_random_passowrd', {'length': password_length, 'complexity': password_special_chars}) }}"
-        ou_path: "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        groups: "{{ item.group }}, Domain Users"
+        password: "{{ password }}"
+        path: "OU=Accounts,OU=Blue1,DC={{ domain }},DC=local"
+        password_never_expires: true
         state: present
       loop: "{{ users.list }}"
+      vars:
+        password: "{{ lookup('password', '/dev/null length=16 chars=ascii_letters,digits,punctuation') }}"
       register: created_users
     
-    - name: Add User to correct group
-      win_shell: |
-        Add-ADGroupMember -Identity "{{ item.group }}" -Members "{{ item.name }}"
-      loop: "{{ users.list }}"
-      when: item.group is defined
-      become_method: runas
-      become_user: "{{ domain_admin_user }}"
+    # - name: Add User to correct group
+    #   win_shell: |
+    #     Add-ADGroupMember -Identity "{{ item.group }}" -Members "{{ item.name }}"
+    #   loop: "{{ users.list }}"
+    #   when: item.group is defined
+    #   become_method: runas
+    #   become_user: "{{ domain_admin_user }}"
     
     - name: Print User Info
       debug:
-        msg: "User '{{ item.name }}' created with password '{{ item.password }}'"
+        msg: "Username: {{ item.name }} Password: {{ password }}"
       loop: "{{ created_users.results }}"

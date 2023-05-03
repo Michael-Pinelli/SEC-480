@@ -12,8 +12,6 @@ windows:
     ansible_user: deployer
     ansible_shell_type: powershell
     shell_type: powershell
-    domain: "blue1"
+    domain: "Blue1"
     domain_name: "{{ domain }}.local"
     domain_admin_user: "Administrator"
-    password_length: 16
-    password_special_chars: true
