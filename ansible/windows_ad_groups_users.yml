@@ -21,17 +21,9 @@
       with_items: "{{ users.list }}"
 
     - name: Generate Random password
-      set_fact:
-    csv_data_rows: "{{ csv_data.list | map(attribute='name') | list | zip(csv_data.list | map(attribute='group') | list) | list }}"
-    csv_data_rows_with_passwords: []
-  loop: "{{ csv_data_rows }}"
-  vars:
-    password: "{{ lookup('password', '/dev/null', chars='ascii_letters,digits', length=16) }}"
-  set_fact:
-    csv_data_rows_with_passwords: "{{ csv_data_rows_with_passwords + [{'name': item[0], 'group': item[1], 'password': password}] }}"
-  when: password is defined
-      #set_fact:
-      #  users: "{{ users.list | map('combine', {'password': lookup('password', '/dev/null length=14 chars=ascii_letters,digits')}) | list }}"
+        
+      loop: "{{ users.list }}"
+      
 
     - name: Create Group
       win_domain_group:
