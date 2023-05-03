@@ -10,6 +10,7 @@
     - name: Read CSV File
       read_csv:
         path: "{{ csv_path }}"
+        key: name
       register: users
       delegate_to: 127.0.0.1
       vars:
@@ -20,38 +21,20 @@
         msg: "{{ item.name }} - {{ item.group }}"
       with_items: "{{ users.list }}"
 
-    - name: Parse CSV data with Python
-      ansible.builtin.python:
-        interpreter_python: auto
-        pip_install: ["csv"]
-        vars:
-          rows: []
-        script: |
-          import csv
-          import random
-          import string
-          from io import StringIO
-
-          # Parse CSV data from Ansible command output
-          reader = csv.DictReader(StringIO({{ csv_data.stdout }}))
-          rows = list(reader)
-
-          # Generate random passwords for each row
-          for row in rows:
-            password = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-            row['password'] = password
-
-          # Write updated CSV data to string
-          output = StringIO()
-          writer = csv.DictWriter(output, fieldnames=reader.fieldnames + ['password'])
-          writer.writeheader()
-          writer.writerows(rows)
-
-          # Set Ansible variable to updated CSV data
-          ansible_facts = {'csv_data': output.getvalue()}
-
-      when: csv_data.stdout_lines is defined
-      
+    - name: Generate Random passwords Part 1
+      set_fact:
+        users_dict: "{{ users.dict }}"
+    
+    - name: Generate Random password Part 2
+      set_fact:
+        users_dict: "{{ users_dict | combine(new_item, recursive=true) }}"
+      vars:
+        new_item: "{ '{{ item.key }}': { 'password': '{{ lookup('password', '/dev/null', chars='ascii_letters,digits', length=16) }}' } }"
+      with_dict: "{{ users_dict }}"
+    
+    - name: Make new list
+      set_fact:
+        users: "{{ users_dict.values() | list }}"
 
     - name: Create Group
       win_domain_group:
@@ -74,14 +57,6 @@
         password_never_expires: true
         state: present
       loop: "{{ users }}"
-    
-    # - name: Add User to correct group
-    #   win_shell: |
-    #     Add-ADGroupMember -Identity "{{ item.group }}" -Members "{{ item.name }}"
-    #   loop: "{{ users.list }}"
-    #   when: item.group is defined
-    #   become_method: runas
-    #   become_user: "{{ domain_admin_user }}"
     
     - name: Print User Info
       debug:
